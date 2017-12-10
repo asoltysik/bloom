@@ -14,6 +14,7 @@ import Data.Word
 import Data.Bits
 import Data.Dish.Murmur3
 import Data.Serialize
+import System.Random
 
 import Prelude hiding (max)
 
@@ -28,6 +29,7 @@ data StableBloomFilter a = StableBloomFilter {
   , p     :: Int
   , k     :: Int
   , max   :: Word64
+  , rng   :: StdGen
 } deriving (Show)
 
 setAtIndex :: Int -> Int -> Word64 -> V.Vector Word64 -> V.Vector Word64
@@ -64,15 +66,25 @@ getAtIndex index len cells =
     wordOffset = index `mod` 64
 
 decrement :: StableBloomFilter a -> StableBloomFilter a
+decrement bloom = 
+  bloom { rng = newRng
+        , cells = foldl (
+          \a b -> 
+          let value = getAtIndex b (d bloom) a - 1
+              actualValue = if value < 0 then 0 else value
+          in setAtIndex b (d bloom) actualValue a
+        ) (cells bloom) indexes}
+  where (index, newRng) = randomR (0, m bloom - p bloom) (rng bloom)
+        indexes = [index..(index + p bloom - 1)]
 
 
 instance BloomFilter StableBloomFilter where
   add item bloom = bloom { 
     cells = 
-      foldl (\a b -> setAtIndex b (d bloom) (max bloom) a) decrementedCells indexes 
+      foldl (\a b -> setAtIndex b (d bloom) (max bloom) a) (cells decremented) indexes 
     }
     where
-      decrementedCells = decrement bloom
+      decremented = decrement bloom
       hash = murmur3IntegerX64 (encode item) 1337
       lower = hash .&. 0xFFFFFFFFFFFFFFFF
       upper = hash `shiftR` 64
@@ -107,7 +119,8 @@ defaultStableBloom size d fpRate = StableBloomFilter {
   , p = optimalP size actualK d fpRate
   , k = actualK
   , d = d
-  , max = (shiftL 1 d) - 1 
+  , max = (shiftL 1 d) - 1
+  , rng = mkStdGen 1
   }
   where
     actualSize = ceiling $ (fromIntegral size) / 64.0

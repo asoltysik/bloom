@@ -6,6 +6,8 @@ import qualified Test.Tasty
 -- writing tests. Its website has more info: <https://hspec.github.io>.
 import Test.Tasty.Hspec
 
+import StableBloomFilter
+
 main :: IO ()
 main = do
     test <- testSpec "haskell-bloom-streaming" spec
@@ -13,5 +15,6 @@ main = do
 
 spec :: Spec
 spec = parallel $ do
-    it "should create stable bloom filter" $ do
-        mightContain 13 (add 13 $ defaultStableBloom 10000 0.01) `shouldBe` True 
+    it "should work" $ do
+      let x = 13 :: Int
+      mightContain x (add x $ defaultStableBloom 10000 1 0.01) `shouldBe` True 

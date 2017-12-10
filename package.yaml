@@ -41,6 +41,7 @@ library:
   - vector
   - Dish
   - cereal
+  - random
   source-dirs: library
 license: MIT
 maintainer: Andrzej Sołtysik
