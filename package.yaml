@@ -1,0 +1,62 @@
+# This YAML file describes your package. Stack will automatically generate a
+# Cabal file when you run `stack build`. See the hpack website for help with
+# this file: <https://github.com/sol/hpack>.
+benchmarks:
+  haskell-bloom-streaming-benchmarks:
+    dependencies:
+    - base
+    - haskell-bloom-streaming
+    - criterion
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
+    main: Main.hs
+    source-dirs: benchmark
+category: Other
+description: haskell-bloom-streaming is a new Haskeleton package.
+executables:
+  haskell-bloom-streaming:
+    dependencies:
+    - base
+    - haskell-bloom-streaming
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
+    main: Main.hs
+    source-dirs: executable
+extra-source-files:
+- CHANGELOG.md
+- LICENSE.md
+- package.yaml
+- README.md
+- stack.yaml
+ghc-options: -Wall
+github: asoltysik/haskell-bloom-streaming
+library:
+  dependencies:
+  - base
+  - mtl
+  - vector
+  - Dish
+  - cereal
+  source-dirs: library
+license: MIT
+maintainer: Andrzej Sołtysik
+name: haskell-bloom-streaming
+synopsis: Implementation of Stable Bloom Filter for unbounded streams. 
+tests:
+  haskell-bloom-streaming-test-suite:
+    dependencies:
+    - base
+    - haskell-bloom-streaming
+    - tasty
+    - tasty-hspec
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
+    main: Main.hs
+    source-dirs: test-suite
+version: '0.0.0'
