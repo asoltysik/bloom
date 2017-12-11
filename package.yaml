@@ -6,6 +6,7 @@ benchmarks:
     dependencies:
     - base
     - haskell-bloom-streaming
+    - bloomfilter
     - criterion
     ghc-options:
     - -rtsopts

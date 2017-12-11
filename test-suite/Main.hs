@@ -15,6 +15,6 @@ main = do
 
 spec :: Spec
 spec = parallel $ do
-    it "should work" $ do
+    it "should work for a single element" $ do
       let x = 13 :: Int
       mightContain x (add x $ defaultStableBloom 10000 1 0.01) `shouldBe` True 
