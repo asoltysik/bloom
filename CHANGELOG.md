@@ -1,7 +1,7 @@
 # Change log
 
-haskell-bloom-streaming uses [Semantic Versioning][].
+bloom uses [Haskell Package Versioning Policy][].
 The change log is available through the [releases on GitHub][].
 
-[Semantic Versioning]: http://semver.org/spec/v2.0.0.html
+[Semantic Versioning]: https://pvp.haskell.org/
 [releases on GitHub]: https://github.com/asoltysik/haskell-bloom-streaming/releases

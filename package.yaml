@@ -2,10 +2,10 @@
 # Cabal file when you run `stack build`. See the hpack website for help with
 # this file: <https://github.com/sol/hpack>.
 benchmarks:
-  haskell-bloom-streaming-benchmarks:
+  bloom-benchmarks:
     dependencies:
     - base
-    - haskell-bloom-streaming
+    - bloom
     - bloomfilter
     - criterion
     ghc-options:
@@ -15,12 +15,12 @@ benchmarks:
     main: Main.hs
     source-dirs: benchmark
 category: Other
-description: haskell-bloom-streaming is a new Haskeleton package.
+description: bloom is a new Haskeleton package.
 executables:
-  haskell-bloom-streaming:
+  bloom:
     dependencies:
     - base
-    - haskell-bloom-streaming
+    - bloom
     ghc-options:
     - -rtsopts
     - -threaded
@@ -37,22 +37,25 @@ ghc-options: -Wall
 github: asoltysik/haskell-bloom-streaming
 library:
   dependencies:
-  - base
+  - base < 5
   - mtl
   - vector
   - Dish
   - cereal
   - random
   source-dirs: library
+  other-modules: 
+  - Internal.BitVector
+  - Internal.Hashing
 license: MIT
 maintainer: Andrzej Sołtysik
-name: haskell-bloom-streaming
+name: bloom
 synopsis: Implementation of Stable Bloom Filter for unbounded streams. 
 tests:
-  haskell-bloom-streaming-test-suite:
+  boom-test-suite:
     dependencies:
     - base
-    - haskell-bloom-streaming
+    - bloom
     - tasty
     - tasty-hspec
     ghc-options:

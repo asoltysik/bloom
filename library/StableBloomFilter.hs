@@ -1,29 +1,21 @@
 module StableBloomFilter(
-  -- BloomFilter
-  BloomFilter
-  , add
-  , mightContain
-
-  -- StableBloomFilter
-  , StableBloomFilter
-  , defaultStableBloom
+  StableBloomFilter
+  , newStableBloom
   ) where
 
 import qualified Data.Vector.Unboxed as V
 import Data.Word
 import Data.Bits
-import Data.Dish.Murmur3
-import Data.Serialize
 import System.Random
 
 import Prelude hiding (max)
 
-class BloomFilter f where
-  add :: (Serialize a) => a -> f a -> f a
-  mightContain :: (Serialize a) => a -> f a -> Bool
+import Bloom
+import Internal.BitVector
+import qualified Internal.Hashing as Hashing
 
 data StableBloomFilter a = StableBloomFilter {
-    cells :: V.Vector Word64
+    cells :: Cells
   , m     :: Int
   , d     :: Int
   , p     :: Int
@@ -31,39 +23,6 @@ data StableBloomFilter a = StableBloomFilter {
   , max   :: Word64
   , rng   :: StdGen
 } deriving (Show)
-
-setAtIndex :: Int -> Int -> Word64 -> V.Vector Word64 -> V.Vector Word64
-setAtIndex index len bits cells = 
-  if wordOffset + len > 64 then
-    let rem = 64 - wordOffset
-        firstPart = setAtIndex index (rem) bits cells
-    in 
-      setAtIndex (wordOffset + rem) (len - rem) (shiftR bits rem) firstPart 
-  else
-    let bitMask = (shiftL 1 len) - 1
-        firstValue = (cells V.! wordIndex) .&. (complement $ shiftL bitMask wordOffset)
-        secondValue = firstValue .|. shiftL (bits .&. bitMask) wordOffset
-    in 
-      V.update cells $ V.singleton (wordIndex, secondValue)
-  where wordIndex = index `div` 64
-        wordOffset = index `mod` 64
-
-
-getAtIndex :: Int -> Int -> V.Vector Word64 -> Word64
-getAtIndex index len cells = 
-  if wordOffset + len > 64 then
-    let rem = 64 - wordOffset
-        firstPart = getAtIndex index rem cells
-        secondPart = shiftL (getAtIndex (index + rem) (len - rem) cells) rem
-    in firstPart .|. secondPart
-  else
-    let bitMask = (shiftL 1 len) - 1
-        firstPart = cells V.! wordIndex
-        secondPart = shiftL bitMask wordOffset
-    in shiftR (firstPart .&. secondPart) wordOffset
-  where
-    wordIndex = index `div` 64
-    wordOffset = index `mod` 64
 
 decrement :: StableBloomFilter a -> StableBloomFilter a
 decrement bloom = 
@@ -85,22 +44,13 @@ instance BloomFilter StableBloomFilter where
     }
     where
       decremented = decrement bloom
-      hash = murmur3IntegerX64 (encode item) 1337
-      lower = hash .&. 0xFFFFFFFFFFFFFFFF
-      upper = hash `shiftR` 64
-      indexes = [fromIntegral $ 
-                (lower + upper * (toInteger i)) `mod` (toInteger $ m bloom) 
-                | i <- [0..(k bloom - 1)]]
+      indexes = Hashing.listOfHashes item (m bloom) (k bloom)
 
   mightContain item bloom = 
     all (\i -> getAtIndex i (d bloom) (cells bloom) > 0) indexes
     where
-      hash = murmur3IntegerX64 (encode item) 1337
-      lower = hash .&. 0xFFFFFFFFFFFFFFFF
-      upper = hash `shiftR` 64
-      indexes = [fromIntegral $ 
-                (lower + upper * (toInteger i)) `mod` (toInteger $ m bloom) 
-                | i <- [0..(k bloom - 1)]]
+      indexes = Hashing.listOfHashes item (m bloom) (k bloom)
+
 
 optimalP :: Int -> Int -> Int -> Double -> Int
 optimalP m k d fpRate = 
@@ -111,15 +61,19 @@ optimalP m k d fpRate =
     subDenom = (1 - fpRate ** (1 / (fromIntegral k))) ** (1 / max)
     denom = (1 / subDenom - 1) * (1 / (fromIntegral k) - 1 / (fromIntegral m))
     
-
-defaultStableBloom :: Int -> Int -> Double -> StableBloomFilter a
-defaultStableBloom size d fpRate = StableBloomFilter { 
-  cells = V.replicate actualSize 0 :: V.Vector Word64
+-- |`newStableBloom` creates a data structure for the Stable Bloom Algorithm
+-- The arguments are:
+-- size - number of cells in the data structure
+-- cellSize - number of bits per cell
+-- fpRate - desired maximum ratio of false positives (between 0 and 1)
+newStableBloom :: Int -> Int -> Double -> StableBloomFilter a
+newStableBloom size cellSize fpRate = StableBloomFilter { 
+  cells = V.replicate actualSize 0 :: Cells
   , m = size
-  , p = optimalP size actualK d fpRate
+  , p = optimalP size actualK cellSize fpRate
   , k = actualK
-  , d = d
-  , max = (shiftL 1 d) - 1
+  , d = cellSize
+  , max = (shiftL 1 cellSize) - 1
   , rng = mkStdGen 1
   }
   where
