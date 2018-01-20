@@ -1,6 +1,10 @@
-module StableBloomFilter(
+module Bloom.StableBloomFilter(
   StableBloomFilter
   , newStableBloom
+
+  -- reexport
+  , B.add
+  , B.mightContain
   ) where
 
 import qualified Data.Vector.Unboxed as V
@@ -10,7 +14,7 @@ import System.Random
 
 import Prelude hiding (max)
 
-import Bloom
+import qualified Bloom as B
 import Internal.BitVector
 import qualified Internal.Hashing as Hashing
 
@@ -37,7 +41,7 @@ decrement bloom =
         indexes = [index..(index + p bloom - 1)]
 
 
-instance BloomFilter StableBloomFilter where
+instance B.BloomFilter StableBloomFilter where
   add item bloom = bloom { 
     cells = 
       foldl (\a b -> setAtIndex b (d bloom) (max bloom) a) (cells decremented) indexes 
@@ -60,7 +64,7 @@ optimalP m k d fpRate =
     max = 2 ** (fromIntegral d) - 1
     subDenom = (1 - fpRate ** (1 / (fromIntegral k))) ** (1 / max)
     denom = (1 / subDenom - 1) * (1 / (fromIntegral k) - 1 / (fromIntegral m))
-    
+
 -- |`newStableBloom` creates a data structure for the Stable Bloom Algorithm
 -- The arguments are:
 -- size - number of cells in the data structure
@@ -73,10 +77,10 @@ newStableBloom size cellSize fpRate = StableBloomFilter {
   , p = optimalP size actualK cellSize fpRate
   , k = actualK
   , d = cellSize
-  , max = (shiftL 1 cellSize) - 1
+  , max = shiftL 1 cellSize - 1
   , rng = mkStdGen 1
   }
   where
     actualSize = ceiling $ (fromIntegral size) / 64.0
-    optimalK = (ceiling $ logBase 2 (1 / fpRate)) `div` 2
+    optimalK = ceiling (logBase 2 (1 / fpRate)) `div` 2
     actualK = if optimalK > size then size else optimalK

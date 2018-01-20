@@ -40,3 +40,13 @@ getAtIndex index len cells =
     wordIndex = index `div` 64
     wordOffset = index `mod` 64
 
+increment :: Int -> Int -> Word64 -> Word64 -> Cells -> Cells
+increment index len maxVal amount cells =
+  setAtIndex index len actualValue cells
+  where
+    value = getAtIndex index len cells + amount
+    actualValue =
+      if value < 0 then 0
+      else 
+        if value > maxVal then maxVal
+        else value
