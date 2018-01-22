@@ -8,6 +8,9 @@ import Data.Vector.Unboxed as V
 import Internal.Hashing
 import Internal.BitVector
 import Internal.Util
+import qualified Bloom as B
+
+
 
 data PartitionedBloomFilter a = PartitionedBloomFilter {
     cells :: [Cells]
@@ -19,18 +22,19 @@ data PartitionedBloomFilter a = PartitionedBloomFilter {
 } deriving (Show)
 
 
-newPartitionedBloom :: Int -> Int -> Double -> Int -> PartitionedBloomFilter a
-newPartitionedBloom size sizePerCell fpRate items = PartitionedBloomFilter {
-    m = optimalM items 0.5 fpRate
+newPartitionedBloom ::  Int -> Double -> Int -> PartitionedBloomFilter a
+newPartitionedBloom sizePerCell fpRate items = PartitionedBloomFilter {
+    m = optimalSize
   , k = actualK
   , d = sizePerCell
-  , s = ceiling $ fromIntegral $ size `div` actualK
-  , cells = Prelude.replicate actualK (V.replicate actualSize 0 :: Cells)
+  , s = ceiling $ fromIntegral $ optimalSize `div` actualK
+  , cells = Prelude.replicate actualK (V.replicate (actualSize`div` optimalK) 0 :: Cells)
   , count = items
 } where
-    actualSize = ceiling $ (fromIntegral size) / 64.0
-    actualK = if optimalK > size then size else optimalK
+    actualSize = ceiling $ (fromIntegral optimalSize) / 64.0
+    actualK = if optimalK > optimalSize then optimalSize else optimalK
     optimalK = (ceiling $ logBase 2 (1 / fpRate)) `div` 2
+    optimalSize = optimalM items 0.5 fpRate
 
 
 
