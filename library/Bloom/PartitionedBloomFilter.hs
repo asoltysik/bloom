@@ -1,3 +1,5 @@
+--TO DO
+
 module Bloom.PartitionedBloomFilter (
     PartitionedBloomFilter
   , newPartitionedBloom
